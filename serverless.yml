@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: aws-nodejs # NOTE: update this with your service name
+service: learning-serverless-resizer-service
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -20,6 +20,8 @@ service: aws-nodejs # NOTE: update this with your service name
 provider:
   name: aws
   runtime: nodejs8.10
+  profile: student1
+  region: us-east-2
 
 # you can overwrite defaults here
 #  stage: dev
@@ -57,6 +59,13 @@ provider:
 functions:
   hello:
     handler: handler.hello
+    events:
+      - s3:
+          bucket: learning-serverless-resizer-service-images-12-01
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: uploads/
+            - suffix: .jpg
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
