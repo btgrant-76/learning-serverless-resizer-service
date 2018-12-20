@@ -14,6 +14,8 @@ module.exports = (bucket, key) => {
 };
 
 function getS3Object(bucket, key) {
+  console.log(`Getting image '${key}' from bucket '${bucket}'`);
+
   return S3.getObject({
     Bucket: bucket,
     Key: key
@@ -21,6 +23,8 @@ function getS3Object(bucket, key) {
 }
 
 function putS3Object(bucket, key, body) {
+  console.log(`Putting image '${key}' into bucket '${bucket}'`);
+
   return S3.putObject({
     Body: body,
     Bucket: bucket,
