@@ -35,16 +35,6 @@ provider:
         - "s3:GetObject"
         - "s3:PutObject"
       Resource: "arn:aws:s3:::learning-serverless-resizer-service-images-12-01/*"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:PutObject"
-#      Resource:
-#        Fn::Join:
-#          - ""
-#          - - "arn:aws:s3:::"
-#            - "Ref" : "ServerlessDeploymentBucket"
-#            - "/*"
 
 # you can define service wide environment variables here
 #  environment:
@@ -68,6 +58,15 @@ functions:
           event: s3:ObjectCreated:*
           rules:
             - prefix: uploads/
+            - suffix: .jpg
+  thumbnailListener:
+    handler:  handler.thumbnailListener
+    events:
+      - s3:
+          bucket: learning-serverless-resizer-service-images-12-01
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: thumbnails/
             - suffix: .jpg
 
 #    The following are a few example events you can configure

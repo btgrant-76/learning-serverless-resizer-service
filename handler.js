@@ -20,3 +20,12 @@ module.exports.resizer = (event, context, callback) => {
       callback(error);
     });
 };
+
+module.exports.thumbnailListener = (event, context, callback) => {
+  console.log('called thumbnailListener');
+  const bucket = event.Records[0].s3.bucket.name;
+  const key = event.Records[0].s3.object.key;
+
+  console.log(`A thumbnail named ${key} was created`);
+  callback(null, { message: 'A thumbnail was created'});
+};
