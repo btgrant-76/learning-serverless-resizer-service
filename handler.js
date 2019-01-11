@@ -6,10 +6,13 @@ const stepfunctions = new AWS.StepFunctions();
 const resizer = require('./resizer');
 
 module.exports.resizer = (event, context, callback) => {
-  console.log(event.Records[0].s3);
+  console.log(event); // .Records[0].s3);
 
-  const bucket = event.Records[0].s3.bucket.name;
-  const key = event.Records[0].s3.object.key;
+  const bucket = event.bucketName;
+  const key = event.objectKey;
+
+  // const bucket = event.Records[0].s3.bucket.name;
+  // const key = event.Records[0].s3.object.key;
 
   console.log(`A file named ${key} was put in a bucket ${bucket}`);
 
@@ -22,6 +25,13 @@ module.exports.resizer = (event, context, callback) => {
       console.log(error);
       callback(error);
     });
+};
+
+module.exports.saveImageMetadata = (event, context, callback) => {
+  console.log("called saveImageMetadata with event %o", event);
+
+  const bucket = event.bucketName;
+  const key = event.objectKey;
 };
 
 module.exports.thumbnailListener = (event, context, callback) => {
