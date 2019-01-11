@@ -39,6 +39,11 @@ provider:
         - "s3:GetObject"
         - "s3:PutObject"
       Resource: "arn:aws:s3:::learning-serverless-resizer-service-images-12-01/*"
+    - Effect: "Allow"
+      Action:
+        - "states:ListStateMachines"
+        - "states:StartExecution"
+      Resource: "arn:aws:states:*:*:*"
 
 # you can define service wide environment variables here
 #  environment:
@@ -77,31 +82,31 @@ functions:
             - prefix: thumbnails/
             - suffix: .jpg
 
-  # requires the step function plugin
-  stepFunctions:
-      stateMachines:
-        imageProcessingMachine: # name of the state machine
-          definition:
-            Comment: "Image processing state machine"
-            StartAt: Parallel # First state
-            States:
-              Parallel: # name of the first state
-                Type: Parallel # type of the state
-                Next: FinalState
-                Branches: # two, parallel branch Tasks
-                  - StartAt:  ResizeImage
-                    States:
-                      ResizeImage:
-                        Type: Task # each Branch has one Task
-                        Resource: arn:aws:lambda:#{AWS::Region}:#{AWS:AccountId}:function:${self:service}-${opt-stage}-resizer # the mustache segments are supported through the pseudo-parameters plugin
-                        End: true
-                  - StartAt:  SaveImageMetaData
-                      States:
-                        SaveImageMetaData:
-                          Type: Task
-                          Resource: arn:aws:lambda:#{AWS::Region}:#{AWS:AccountId}:function:${self:service}-${opt-stage}-saveImageMetadata # the last bit is the name of a function defined above
-                          End: true
-              FinalState: # the name of the final state is FinalState
-                Type: Pass
-                End: true
+# requires the step function plugin
+stepFunctions:
+  stateMachines:
+    imageProcessingMachine: # name of the state machine
+      definition:
+        Comment: "Image processing state machine"
+        StartAt: Parallel # First state
+        States:
+          Parallel: # name of the first state
+            Type: Parallel # type of the state
+            Next: FinalState
+            Branches: # two, parallel branch Tasks
+              - StartAt:  ResizeImage
+                States:
+                  ResizeImage:
+                    Type: Task # each Branch has one Task
+                    Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage, 'dev'}-resizer # the mustache segments are supported through the pseudo-parameters plugin
+                    End: true
+              - StartAt:  SaveImageMetaData
+                States:
+                  SaveImageMetaData:
+                    Type: Task
+                    Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage, 'dev'}-saveImageMetadata # the last bit is the name of a function defined above
+                    End: true
+          FinalState: # the name of the final state is FinalState
+            Type: Pass
+            End: true
 
