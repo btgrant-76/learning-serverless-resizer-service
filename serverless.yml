@@ -54,8 +54,8 @@ provider:
 #    - exclude-me-dir/**
 
 functions:
-  resizer:
-    handler: handler.resizer
+  executeStepFunction:
+    handler: handler.executeStepFunction
     events:
       - s3:
           bucket: learning-serverless-resizer-service-images-12-01
@@ -63,6 +63,10 @@ functions:
           rules:
             - prefix: uploads/
             - suffix: .jpg
+  resizer:
+    handler: handler.resizer
+  saveImageMetadata:
+    handler: handler.saveImageMetadata
   thumbnailListener:
     handler:  handler.thumbnailListener
     events:
@@ -73,47 +77,31 @@ functions:
             - prefix: thumbnails/
             - suffix: .jpg
 
-#    The following are a few example events you can configure
-#    NOTE: Please make sure to change your handler code to work with those events
-#    Check the event documentation for details
-#    events:
-#      - http:
-#          path: users/create
-#          method: get
-#      - s3: ${env:BUCKET}
-#      - schedule: rate(10 minutes)
-#      - sns: greeter-topic
-#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
-#      - alexaSkill: amzn1.ask.skill.xx-xx-xx-xx
-#      - alexaSmartHome: amzn1.ask.skill.xx-xx-xx-xx
-#      - iot:
-#          sql: "SELECT * FROM 'some_topic'"
-#      - cloudwatchEvent:
-#          event:
-#            source:
-#              - "aws.ec2"
-#            detail-type:
-#              - "EC2 Instance State-change Notification"
-#            detail:
-#              state:
-#                - pending
-#      - cloudwatchLog: '/aws/lambda/hello'
-#      - cognitoUserPool:
-#          pool: MyUserPool
-#          trigger: PreSignUp
+  # requires the step function plugin
+  stepFunctions:
+      stateMachines:
+        imageProcessingMachine: # name of the state machine
+          definition:
+            Comment: "Image processing state machine"
+            StartAt: Parallel # First state
+            States:
+              Parallel: # name of the first state
+                Type: Parallel # type of the state
+                Next: FinalState
+                Branches: # two, parallel branch Tasks
+                  - StartAt:  ResizeImage
+                    States:
+                      ResizeImage:
+                        Type: Task # each Branch has one Task
+                        Resource: arn:aws:lambda:#{AWS::Region}:#{AWS:AccountId}:function:${self:service}-${opt-stage}-resizer # the mustache segments are supported through the pseudo-parameters plugin
+                        End: true
+                  - StartAt:  SaveImageMetaData
+                      States:
+                        SaveImageMetaData:
+                          Type: Task
+                          Resource: arn:aws:lambda:#{AWS::Region}:#{AWS:AccountId}:function:${self:service}-${opt-stage}-saveImageMetadata # the last bit is the name of a function defined above
+                          End: true
+              FinalState: # the name of the final state is FinalState
+                Type: Pass
+                End: true
 
-#    Define function environment variables here
-#    environment:
-#      variable2: value2
-
-# you can add CloudFormation resource templates here
-#resources:
-#  Resources:
-#    NewResource:
-#      Type: AWS::S3::Bucket
-#      Properties:
-#        BucketName: my-new-bucket
-#  Outputs:
-#     NewOutput:
-#       Description: "Description for the output"
-#       Value: "Some output value"
