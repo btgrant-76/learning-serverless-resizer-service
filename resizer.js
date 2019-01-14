@@ -13,6 +13,15 @@ module.exports = (bucket, key) => {
     .then(buffer => putS3Object(bucket, newKey, buffer));
 };
 
+module.exports.cropToBlackAndWhite = (bucket, key) => {
+  const newKey = replacePrefix(key, 'crop_');
+  const height = 512;
+
+  return getS3Object(bucket, key)
+    .then(data => blackAndWhiteSquare(data.Body, height))
+    .then(buffer => putS3Object(bucket, newKey, buffer));
+};
+
 function getS3Object(bucket, key) {
   console.log(`Getting image '${key}' from bucket '${bucket}'`);
 
@@ -33,9 +42,9 @@ function putS3Object(bucket, key, body) {
   }).promise();
 }
 
-function replacePrefix(key) {
+function replacePrefix(key, filePrefix = '') {
   const uploadPrefix = 'uploads/';
-  const thumbnailsPrefix = 'thumbnails/';
+  const thumbnailsPrefix = `thumbnails/${filePrefix}`;
   return key.replace(uploadPrefix, thumbnailsPrefix);
 }
 
@@ -50,4 +59,19 @@ function resizer(data, height) {
         });
     })
     .catch(err => err);
+}
+
+function blackAndWhiteSquare(data, heightAndWidth) {
+  return Jimp
+    .read(data)
+    .then(image => {
+      return image
+        .crop(0, 0, heightAndWidth, heightAndWidth)
+        .greyscale()
+        .quality(100)
+        .getBuffer(Jimp.MIME_JPEG, (err, buffer) => {
+          return buffer;
+        })
+    }).catch(err => err);
+
 }
