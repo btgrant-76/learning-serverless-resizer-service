@@ -70,6 +70,8 @@ functions:
             - suffix: .jpg
   resizer:
     handler: handler.resizer
+  croppedGrayScale:
+    handler: handler.croppedGrayScale
   saveImageMetadata:
     handler: handler.saveImageMetadata
   thumbnailListener:
@@ -93,12 +95,18 @@ stepFunctions:
           Parallel: # name of the first state
             Type: Parallel # type of the state
             Next: FinalState
-            Branches: # two, parallel branch Tasks
+            Branches: # three, parallel branch Tasks
               - StartAt:  ResizeImage
                 States:
                   ResizeImage:
                     Type: Task # each Branch has one Task
                     Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage, 'dev'}-resizer # the mustache segments are supported through the pseudo-parameters plugin
+                    End: true
+              - StartAt:  CroppedGrayScale
+                States:
+                  CroppedGrayScale:
+                    Type: Task
+                    Resource: arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:${self:service}-${opt:stage, 'dev'}-croppedGrayScale
                     End: true
               - StartAt:  SaveImageMetaData
                 States:

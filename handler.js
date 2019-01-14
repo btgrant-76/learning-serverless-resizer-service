@@ -27,6 +27,24 @@ module.exports.resizer = (event, context, callback) => {
     });
 };
 
+module.exports.croppedGrayScale = (event, context, callback) => {
+  console.log(event);
+
+  const bucket = event.bucketName;
+  const key = event.objectKey;
+
+  resizer.cropToBlackAndWhite(bucket, key)
+    .then(() => {
+      const message = 'The grayscale image was created';
+      console.log(message);
+      callback(null, { message: message });
+    }).catch(error => {
+      console.log(error);
+      callback(error);
+    });
+
+};
+
 module.exports.saveImageMetadata = (event, context, callback) => {
   console.log("called saveImageMetadata with event %o", event);
 
@@ -36,7 +54,6 @@ module.exports.saveImageMetadata = (event, context, callback) => {
 
 module.exports.thumbnailListener = (event, context, callback) => {
   console.log('called thumbnailListener');
-  const bucket = event.Records[0].s3.bucket.name;
   const key = event.Records[0].s3.object.key;
 
   console.log(`A thumbnail named ${key} was created`);
