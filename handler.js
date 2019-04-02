@@ -4,6 +4,7 @@ const AWS = require('aws-sdk');
 const stepfunctions = new AWS.StepFunctions();
 
 const resizer = require('./resizer');
+const imageMetadataManager = require('./imageMetadataManager');
 
 module.exports.resizer = (event, context, callback) => {
   console.log(event); // .Records[0].s3);
@@ -50,14 +51,36 @@ module.exports.saveImageMetadata = (event, context, callback) => {
 
   const bucket = event.bucketName;
   const key = event.objectKey;
+
+  imageMetadataManager
+    .saveImageMetadata(bucket, key, false)
+    .then(() => {
+      console.log('Save image metadata was complete');
+      callback(null, null);
+    }).catch(error => {
+      console.log(error);
+      callback(null, null);
+    });
 };
 
 module.exports.thumbnailListener = (event, context, callback) => {
-  console.log('called thumbnailListener');
+  console.log('called thumbnailListener with event %o', event);
+
+  const bucket = event.Records[0].s3.bucket.name;
   const key = event.Records[0].s3.object.key;
 
-  console.log(`A thumbnail named ${key} was created`);
-  callback(null, { message: 'A thumbnail was created'});
+  const message = `A thumbnail named ${key} was created in ${bucket}`;
+  console.log(message);
+
+  imageMetadataManager
+    .saveImageMetadata(bucket, key, true)
+    .then(() => {
+      console.log('Save image metadata was complete');
+      callback(null, { message: message});
+    }).catch(error => {
+      console.log(error);
+      callback(null, null);
+    });
 };
 
 module.exports.executeStepFunction = (event, context, callback) => {
